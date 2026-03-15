@@ -1,5 +1,5 @@
 # ============================================================================
-# ASISTENTE NORMATIVO - REGLAMENTO ACADÉMICO KONRAD LORENZ
+# KONSULTA BOT - REGLAMENTO ACADÉMICO KONRAD LORENZ
 # ============================================================================
 # Técnicas aplicadas:
 #   1. System Prompt estructurado (ROL, TAREA, CONTEXTO, RESTRICCIONES)
@@ -58,12 +58,12 @@ def construir_system_prompt(texto_reglamento: str) -> str:
 
     return f"""
 ================================================================================
-ASISTENTE NORMATIVO — REGLAMENTO ACADÉMICO DE PREGRADO
+KONSULTA BOT — ASISTENTE DEL REGLAMENTO ACADÉMICO DE PREGRADO
 FUNDACIÓN UNIVERSITARIA KONRAD LORENZ (Resolución No.01 — 19/02/2021)
 ================================================================================
 
 1. ROL:
-   Eres NormaBot, un asistente experto en el Reglamento Académico de Pregrado
+   Eres KonsultaBot, un asistente experto en el Reglamento Académico de Pregrado
    de la Fundación Universitaria Konrad Lorenz.
    Respondes ÚNICAMENTE con base en el texto del reglamento proporcionado
    en la sección CONTEXTO de este prompt.
@@ -127,7 +127,6 @@ FUNDACIÓN UNIVERSITARIA KONRAD LORENZ (Resolución No.01 — 19/02/2021)
    Responde SIEMPRE con un objeto JSON válido. Sin texto fuera del JSON.
 
    {{
-     "articulo": "Art. XX [+ Parágrafo si aplica]",
      "respuesta": "Explicación clara y accesible para el estudiante",
      "cita_textual": "Fragmento literal clave del reglamento",
      "accion_recomendada": "Qué debe hacer el estudiante / a quién acudir",
@@ -211,7 +210,7 @@ RECUERDA: Solo JSON válido en tu respuesta. Sin texto fuera del objeto JSON.
 def mostrar_historial(historial: list):
     """Muestra el historial completo de la sesión."""
     print("\n" + "="*80)
-    print("HISTORIAL DE SESIÓN — NORMABOT")
+    print("HISTORIAL DE SESIÓN — KONSULTA BOT")
     print("="*80)
 
     if not historial:
@@ -221,7 +220,7 @@ def mostrar_historial(historial: list):
     for i, turno in enumerate(historial, 1):
         print(f"\n[TURNO {i}]")
         print(f"USUARIO: {turno['usuario']}")
-        print(f"\nNORMABOT:")
+        print(f"\nKONSULTA BOT:")
         try:
             parsed = json.loads(turno['asistente'])
             print(json.dumps(parsed, ensure_ascii=False, indent=2))
@@ -237,9 +236,9 @@ def mostrar_historial(historial: list):
 # PASO 4 — FUNCIÓN PRINCIPAL
 # ============================================================================
 
-def asistente_normativo():
+def konsulta_bot():
     """
-    Sistema interactivo NormaBot.
+    Sistema interactivo KonsultaBot.
     Carga el reglamento desde el PDF, lo inyecta en el prompt
     y mantiene historial de conversación.
     """
@@ -261,7 +260,7 @@ def asistente_normativo():
     historial: list = []
 
     print("="*80)
-    print("⚖️  NORMABOT — ASISTENTE DEL REGLAMENTO ACADÉMICO")
+    print("🎓 KONSULTA BOT — ASISTENTE DEL REGLAMENTO ACADÉMICO")
     print("Fundación Universitaria Konrad Lorenz")
     print("="*80)
     print("Consulta cualquier duda sobre el Reglamento Académico de Pregrado.")
@@ -286,9 +285,9 @@ def asistente_normativo():
             contenido += "HISTORIAL PREVIO:\n"
             for turno in historial:
                 contenido += f"Usuario: {turno['usuario']}\n"
-                contenido += f"NormaBot: {turno['asistente']}\n\n"
+                contenido += f"KonsultaBot: {turno['asistente']}\n\n"
 
-        contenido += f"CONSULTA ACTUAL:\n{pregunta}\n\nRESPUESTA DE NORMABOT (solo JSON):"
+        contenido += f"CONSULTA ACTUAL:\n{pregunta}\n\nRESPUESTA DE KONSULTA BOT (solo JSON):"
 
         try:
             response = client.models.generate_content(
@@ -312,7 +311,7 @@ def asistente_normativo():
             })
 
             # Mostrar respuesta formateada
-            print("\n⚖️  NORMABOT:")
+            print("\n🎓 KONSULTA BOT:")
             try:
                 parsed = json.loads(respuesta_raw)
                 print(json.dumps(parsed, ensure_ascii=False, indent=2))
@@ -333,4 +332,5 @@ def asistente_normativo():
 # ============================================================================
 
 if __name__ == "__main__":
-    asistente_normativo()
+    konsulta_bot()
+
