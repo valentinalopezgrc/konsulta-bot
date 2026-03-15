@@ -195,7 +195,6 @@ Al finalizar, el bot muestra el resumen completo de la conversación.
 
 
 
-```
 
 ---
 
