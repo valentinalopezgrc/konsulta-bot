@@ -170,12 +170,28 @@ El bot activa advertencia crítica: pérdida de cupo (Art. 75, num. 3).
 **Consulta 3:** `salir`
 Al finalizar la sesión el bot muestra el historial completo de consultas.
 
-![Historial escenario 1](Capturas%20de%20pantalla/historial_escenario1.png)
-![Historial escenario 2](Capturas%20de%20pantalla/historial_escenario2.png)
+![Historial escenario 1](Capturas%20de%20pantalla/historial_1_escenario_1.png)
+![Historial escenario 2](Capturas%20de%20pantalla/historial_2_escenario_2.png)
 ---
 
-### 🧪 Escenario 2: Faltas de asistencia
-*(próximamente)*
+### Escenario 2: Faltas de asistencia
+Prueba la restricción `<restriccion_calificaciones>`. Se simula un estudiante
+que pregunta sobre inasistencias y excusas médicas.
+
+**Consulta 1:** `¿Cuántas fallas puedo tener antes de perder una materia?`
+El bot cita Art. 44 y explica el límite del 20% de inasistencias.
+
+![Escenario 2 - consulta 1](Capturas%20de%20pantalla/escenario2_p1.png)
+
+**Consulta 2:** `¿Qué pasa si tengo una excusa médica?`
+El bot cita Art. 65 y aclara que la excusa no retira las fallas acumuladas.
+![Escenario 2 - consulta 2](Capturas%20de%20pantalla/escenario2_p2.png)
+
+
+**Historial de sesión:**
+Al finalizar, el bot muestra el resumen completo de la conversación.
+![Historial escenario 1](Capturas%20de%20pantalla/historial_1_escenario_2.png)
+![Historial escenario 2](Capturas%20de%20pantalla/historial_2_escenario_2.png)
 
 ### 🧪 Escenario 3: Revisión de notas
 *(próximamente)*
