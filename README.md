@@ -91,7 +91,11 @@ system_prompt = construir_system_prompt(texto_reglamento)
 ├── requirements.txt                       # Dependencias del proyecto
 └── README.md                              # Resumen del proyecto
 ```
-
+⚠️ NOTA IMPORTANTE: La API key debe generarse desde un proyecto nuevo en 
+Google AI Studio. El free tier tiene límite de tokens por minuto,
+por lo que se recomienda generar desde UN PROYECTO NUEVO en 
+Google AI Studio (aistudio.google.com/apikey). Si el proyecto 
+ya tiene cuota agotada, el bot devolverá error 429.
 ---
 
 ## ⚙️ Instalación y ejecución
