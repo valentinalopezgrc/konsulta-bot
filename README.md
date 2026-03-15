@@ -144,6 +144,40 @@ TÚ: ¿Cuántas fallas puedo tener antes de perder una materia?
 ```
 
 ---
+## 📸 Ejecución del prompt — Escenarios de prueba
+
+Esta sección reemplaza el PDF de ejecución solicitado en la entrega.
+Cada escenario muestra cómo KonsultaBot interpreta el reglamento
+y responde con el artículo exacto en formato JSON.
+
+---
+### CAPTURAS DE PANTALLA
+
+### Escenario 1: Estudiante que pierde materias
+Prueba la restricción `<restriccion_perdida_cupo>`. Se simula un estudiante 
+que pierde una materia progresivamente hasta perder el cupo.
+
+**Consulta 1:** `Perdí por segunda vez una materia`
+El bot cita Art. 74-75 y advierte que la nota mínima sube a 35.
+
+![Escenario 1 - consulta 1](escenario1_p1.png)
+
+**Consulta 2:** `¿Y si la pierdo tres veces?`
+El bot activa advertencia crítica: pérdida de cupo (Art. 75, num. 3).
+
+![Escenario 1 - consulta 2](escenario1_p2.png)
+
+---
+
+### 🧪 Escenario 2: Faltas de asistencia
+*(próximamente)*
+
+### 🧪 Escenario 3: Revisión de notas
+*(próximamente)*
+
+```
+
+---
 
 ## 📦 Dependencias
 
