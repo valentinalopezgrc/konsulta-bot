@@ -193,8 +193,7 @@ Al finalizar, el bot muestra el resumen completo de la conversación.
 ![Historial escenario 1](Capturas%20de%20pantalla/historial_1_escenario_2.png)
 ![Historial escenario 2](Capturas%20de%20pantalla/historial_2_escenario_2.png)
 
-### 🧪 Escenario 3: Revisión de notas
-*(próximamente)*
+
 
 ```
 
