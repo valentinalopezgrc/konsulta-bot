@@ -160,13 +160,17 @@ que pierde una materia progresivamente hasta perder el cupo.
 **Consulta 1:** `Perdí por segunda vez una materia`
 El bot cita Art. 74-75 y advierte que la nota mínima sube a 35.
 
-![Escenario 1 - consulta 1](escenario1_p1.png)
+![Escenario 1 - consulta 1](Capturas%20de%20pantalla/escenario1_p1.png)
 
-**Consulta 2:** `¿Y si la pierdo tres veces?`
+**Consulta 2:** `¿Y si la pierdo por tercera vez?`
 El bot activa advertencia crítica: pérdida de cupo (Art. 75, num. 3).
 
-![Escenario 1 - consulta 2](escenario1_p2.png)
+![Escenario 1 - consulta 2](CCapturas%20de%20pantalla/escenario1_p2.png)
 
+**Consulta 3:** `salir`
+Al finalizar la sesión el bot muestra el historial completo de consultas.
+
+![Historial escenario 1](Capturas%20de%20pantalla/historial_escenario1.png)
 ---
 
 ### 🧪 Escenario 2: Faltas de asistencia
