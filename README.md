@@ -85,6 +85,7 @@ system_prompt = construir_system_prompt(texto_reglamento)
 
 ```
 ├── konsulta_bot.py                        # Código fuente principal
+├── .env.example                           # Plantilla de variables de entorno
 ├── reglamento-academico-de-pregrado.pdf   # Documento base oficial
 ├── .gitignore                             # Excluye .env y archivos innecesarios
 ├── requirements.txt                       # Dependencias del proyecto
