@@ -165,12 +165,13 @@ El bot cita Art. 74-75 y advierte que la nota mínima sube a 35.
 **Consulta 2:** `¿Y si la pierdo por tercera vez?`
 El bot activa advertencia crítica: pérdida de cupo (Art. 75, num. 3).
 
-![Escenario 1 - consulta 2](CCapturas%20de%20pantalla/escenario1_p2.png)
+![Escenario 1 - consulta 2](Capturas%20de%20pantalla/escenario1_p2.png)
 
 **Consulta 3:** `salir`
 Al finalizar la sesión el bot muestra el historial completo de consultas.
 
 ![Historial escenario 1](Capturas%20de%20pantalla/historial_escenario1.png)
+![Historial escenario 2](Capturas%20de%20pantalla/historial_escenario2.png)
 ---
 
 ### 🧪 Escenario 2: Faltas de asistencia
