@@ -10,12 +10,14 @@ from pathlib import Path
 from dotenv import load_dotenv
 import pypdf
 import chromadb
+from sentence_transformers import SentenceTransformer
 from google import genai
-from google.genai import types
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 API_KEY = os.getenv("GENAI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 client  = genai.Client(api_key=API_KEY)
+MODELO_ST = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
 PDF_DIR       = Path("pdfs")
 CHROMA_DIR    = "./chroma_db"
@@ -44,39 +46,38 @@ def cargar_pdfs(pdf_dir: Path):
     return documentos
 
 # ══════════════════════════════════════════
-# PASO 2 — CHUNKING
+# PASO 2 — CHUNKING con LangChain
 # ══════════════════════════════════════════
 def crear_chunks(documentos):
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+        separators=["\n\n", "\n", ".", " "]
+    )
     chunks = []
     for doc in documentos:
-        texto, source = doc["text"], doc["source"]
-        inicio, idx = 0, 0
-        while inicio < len(texto):
-            fin = inicio + CHUNK_SIZE
-            fragmento = texto[inicio:fin]
-            if len(fragmento) < 50: break
+        if not doc["text"]:
+            continue
+        docs_lc = splitter.create_documents(
+            [doc["text"]],
+            metadatas=[{"source": doc["source"]}]
+        )
+        for idx, d in enumerate(docs_lc):
             chunks.append({
-                "id": f"{source.replace('.pdf','')}_chunk_{idx:04d}",
-                "text": fragmento,
-                "source": source,
+                "id": f"{doc['source'].replace('.pdf','')}_chunk_{idx:04d}",
+                "text": d.page_content,
+                "source": doc["source"],
                 "chunk_index": idx
             })
-            inicio += CHUNK_SIZE - CHUNK_OVERLAP
-            idx += 1
     print(f"  Total chunks: {len(chunks)}")
     print(f"  Tamaño: {CHUNK_SIZE} chars | Overlap: {CHUNK_OVERLAP} chars")
     return chunks
 
 # ══════════════════════════════════════════
-# PASO 3 — EMBEDDINGS con google-genai
+# PASO 3 — EMBEDDINGS locales con SentenceTransformers
 # ══════════════════════════════════════════
 def obtener_embedding(texto: str, task: str = "RETRIEVAL_DOCUMENT"):
-    resp = client.models.embed_content(
-        model="models/gemini-embedding-001",
-        contents=texto,
-        config=types.EmbedContentConfig(task_type=task)
-    )
-    return resp.embeddings[0].values
+    return MODELO_ST.encode(texto).tolist()
 
 # ══════════════════════════════════════════
 # PASO 4 — BASE VECTORIAL con ChromaDB
@@ -85,28 +86,19 @@ def construir_base_vectorial(chunks):
     Path(CHROMA_DIR).mkdir(exist_ok=True)
     db  = chromadb.PersistentClient(path=CHROMA_DIR)
     col = db.get_or_create_collection(COLLECTION, metadata={"hnsw:space": "cosine"})
-
     total = len(chunks)
-    print(f"  🔢 Vectorizando {total} chunks con text-embedding-004...")
-    ids, embeddings, textos, metadatos = [], [], [], []
-
-    for i, chunk in enumerate(chunks):
-        print(f"  [{i+1}/{total}] {chunk['id']}", end="\r")
-        emb = obtener_embedding(chunk["text"])
-        ids.append(chunk["id"])
-        embeddings.append(emb)
-        textos.append(chunk["text"])
-        metadatos.append({"source": chunk["source"], "chunk_index": chunk["chunk_index"]})
-        time.sleep(0.7)
-
+    print(f"  🔢 Vectorizando {total} chunks localmente...")
+    textos_todos = [c["text"] for c in chunks]
+    embeddings_todos = MODELO_ST.encode(textos_todos, show_progress_bar=True).tolist()
+    ids = [c["id"] for c in chunks]
+    metadatos = [{"source": c["source"], "chunk_index": c["chunk_index"]} for c in chunks]
     for i in range(0, len(ids), 50):
         col.add(
             ids=ids[i:i+50],
-            embeddings=embeddings[i:i+50],
-            documents=textos[i:i+50],
+            embeddings=embeddings_todos[i:i+50],
+            documents=textos_todos[i:i+50],
             metadatas=metadatos[i:i+50]
         )
-
     print(f"\n  ✅ Base vectorial lista: {col.count()} chunks indexados")
     print(f"  📁 Guardada en: {CHROMA_DIR}")
     return col
@@ -121,7 +113,7 @@ def cargar_base_vectorial_existente():
 # PASO 5 — RETRIEVAL
 # ══════════════════════════════════════════
 def recuperar_chunks(pregunta: str, col):
-    emb = obtener_embedding(pregunta, task="RETRIEVAL_QUERY")
+    emb = obtener_embedding(pregunta)
     res = col.query(query_embeddings=[emb], n_results=TOP_K,
                     include=["documents","metadatas","distances"])
     chunks = []
@@ -161,13 +153,11 @@ def generar_respuesta(pregunta: str, chunks) -> dict:
         f"[{c['source']} | similitud={c['similarity']}]\n{c['text']}"
         for c in chunks
     ])
-
     prompt = SYSTEM_PROMPT + "\n\n"
     for p, r in FEW_SHOT:
         prompt += f"Usuario: {p}\nKonsultaBot: {r}\n\n"
     prompt += f"<CONTEXTO_RAG>\n{contexto}\n</CONTEXTO_RAG>\n"
     prompt += f"Usuario: {pregunta}\nKonsultaBot (solo JSON):"
-
     resp = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
     raw  = resp.text.strip()
     if raw.startswith("```"):
@@ -184,22 +174,71 @@ def generar_respuesta(pregunta: str, chunks) -> dict:
 # LOOP INTERACTIVO
 # ══════════════════════════════════════════
 def loop_interactivo(col):
+    from colorama import Fore, Back, Style, init
+    init()
+
+    # ── Encabezado ──
+    print(f"\n{Fore.LIGHTGREEN_EX}{'━'*60}{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}{Back.MAGENTA}{'  🎓 KONSULTABOT'.center(60)}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}{'  Asistente de Reglamentos Institucionales'.center(60)}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}{'  Fundación Universitaria Konrad Lorenz'.center(60)}{Style.RESET_ALL}")
+    print(f"{Fore.LIGHTGREEN_EX}{'━'*60}{Style.RESET_ALL}")
+
+    # ── Saludo ──
+    print(f"\n{Fore.WHITE}  Bienvenido(a). Soy {Fore.MAGENTA}KonsultaBot{Fore.WHITE}, tu asistente virtual")
+    print(f"  especializado en los reglamentos institucionales de la Fundación Universitaria Konrad Lorenz.{Style.RESET_ALL}")
+    print(f"\n{Fore.WHITE}  Estoy aquí para ayudarte con información relacionada a:{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}     📘 Reglamento Académico de Pregrado{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}     📗 Reglamento Académico de Posgrado{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}     📙 Reglamento Docente{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}     📕 Reglamento Académico Institucional{Style.RESET_ALL}")
+    print(f"\n{Fore.WHITE}  Haz tu pregunta y consultaré la información en las fuentes oficiales.{Style.RESET_ALL}")
+    print(f"\n{Fore.YELLOW}  💡 Escribe 'salir' para finalizar la sesión.{Style.RESET_ALL}")
+    print(f"{Fore.BLUE}{'━'*60}{Style.RESET_ALL}\n")
+
     while True:
-        print()
-        pregunta = input("  🎓 Tu pregunta: ").strip()
+        pregunta = input(f"\n{Fore.CYAN}  🎓 Tu pregunta: {Style.RESET_ALL}").strip()
         if not pregunta:
             continue
         if pregunta.lower() == "salir":
-            print("  👋 ¡Hasta luego!")
+            print(f"\n{Fore.BLUE}  👋 Sesión finalizada. Gracias por usar KonsultaBot.{Style.RESET_ALL}\n")
             break
-        print("  🔍 Buscando chunks relevantes...")
+
+        print(f"\n{Fore.YELLOW}  🔍 Buscando en los reglamentos...{Style.RESET_ALL}")
         chunks = recuperar_chunks(pregunta, col)
-        print(f"  📦 {len(chunks)} chunks recuperados")
-        print("  🤖 Generando respuesta...")
+
+        print(f"\n{Fore.YELLOW}  🤖 Generando respuesta...{Style.RESET_ALL}")
         respuesta = generar_respuesta(pregunta, chunks)
-        print("\n  " + "─"*50)
-        print(json.dumps(respuesta, ensure_ascii=False, indent=4))
-        print("  " + "─"*50)
+
+        art      = str(respuesta.get('articulo') or 'No especificado')
+        resp_txt = str(respuesta.get('respuesta') or '')
+        cita     = str(respuesta.get('cita_textual') or '')
+        accion   = str(respuesta.get('accion_recomendada') or '')
+        advert   = str(respuesta.get('advertencia') or '')
+
+        print(f"\n{Fore.BLUE}{'━'*60}{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}{Back.BLUE}{'  📋 RESPUESTA'.center(60)}{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}{'━'*60}{Style.RESET_ALL}")
+
+        print(f"\n  {Fore.CYAN}📌 Artículo:{Style.RESET_ALL} {Fore.WHITE}{art}{Style.RESET_ALL}")
+        print(f"\n  {Fore.CYAN}💬 Respuesta:{Style.RESET_ALL}")
+        for linea in resp_txt.split('. '):
+            if linea:
+                print(f"  {Fore.WHITE}{linea.strip()}.{Style.RESET_ALL}")
+
+        if cita:
+            print(f"\n  {Fore.CYAN}📝 Cita textual:{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}«{cita[:200]}»{Style.RESET_ALL}")
+
+        if accion:
+            print(f"\n  {Fore.GREEN}✅ Acción recomendada:{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{accion}{Style.RESET_ALL}")
+
+        if advert and advert != 'None':
+            print(f"\n  {Fore.MAGENTA}⚠️  Advertencia:{Style.RESET_ALL}")
+            print(f"  {Fore.YELLOW}{advert}{Style.RESET_ALL}")
+
+        print(f"\n{Fore.MAGENTA}{'━'*60}{Style.RESET_ALL}")
 
 # ══════════════════════════════════════════
 # MAIN
@@ -209,11 +248,9 @@ def main():
     print("  KONSULTABOT RAG — ASISTENTE DE REGLAMENTOS ACADÉMICOS")
     print("  Fundación Universitaria Konrad Lorenz")
     print("  Pipeline: PDF → Chunks → Embeddings → ChromaDB → Gemini")
-    print("  SDK: google-genai + ChromaDB (sin LangChain)")
+    print("  Embeddings: SentenceTransformers (local) | LLM: Gemini")
     print("█"*60)
-
     chroma_existe = Path(CHROMA_DIR).exists() and any(Path(CHROMA_DIR).iterdir())
-
     if chroma_existe:
         print("\n[1/4] ⚡ Base vectorial existente detectada...")
         col = cargar_base_vectorial_existente()
@@ -224,7 +261,6 @@ def main():
         chunks = crear_chunks(docs)
         print("\n[3/4] 🗄️  VECTORIZANDO Y CONSTRUYENDO BASE VECTORIAL...")
         col    = construir_base_vectorial(chunks)
-
     print("\n[4/4] ✅ SISTEMA RAG LISTO\n")
     loop_interactivo(col)
 
