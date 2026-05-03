@@ -1,101 +1,13 @@
-# 🎓 KonsultaBot — Asistente del Reglamento Académico
+# 🎓 KonsultaBot — Asistente de Reglamentos Institucionales
 ### Fundación Universitaria Konrad Lorenz
 
-> Proyecto: **Desarrollo de un Asistente Experto basado en RAG y Agentes**  
+> **Materia:** Desarrollo de Aplicaciones con IA  
+> **Estudiante:** Laura Valentina López García  
+> **Proyecto:** Desarrollo de un Asistente Experto basado en RAG
 
 ---
 
-## ¿Qué es KonsultaBot?
-
-**KonsultaBot** es un asistente conversacional experto en el **Reglamento Académico de Pregrado de la Fundación Universitaria Konrad Lorenz** (Resolución de Rectoría No. 01 — 19 de febrero de 2021).
-
-Está diseñado para ayudar a **estudiantes, docentes y personal administrativo** a consultar artículos del reglamento, entender sus derechos y obligaciones, y saber exactamente a qué instancia acudir según su situación académica.
-
-El nombre **KonsultaBot** es un juego de palabras entre **Konrad** (la universidad) y **Consulta** (su función principal).
-
----
-
-## 🎯 Enfoque elegido
-
-**Asistente Legal/Normativo** — basado en el Reglamento Académico de Pregrado oficial de la Fundación Universitaria Konrad Lorenz.
-
----
-
-## 🧠 Técnicas de Prompting implementadas
-
-### 1. System Prompt estructurado
-El prompt está organizado en 6 secciones claramente definidas:
-
-| Sección | Descripción |
-|---------|-------------|
-| **ROL** | Define quién es KonsultaBot y qué puede hacer |
-| **TAREA** | Qué tipo de consultas resuelve y cómo |
-| **CONTEXTO** | El texto completo del reglamento, delimitado con triple comilla `'''` |
-| **RESTRICCIONES** | Comportamiento ante diferentes tipos de preguntas |
-| **FORMATO** | Estructura JSON obligatoria para cada respuesta |
-| **EJEMPLOS** | 5 casos de referencia (Few-Shot) |
-
-### 2. Few-Shot Prompting
-Se incluyen **5 ejemplos** de pares pregunta/respuesta que cubren los casos más frecuentes:
-
-| Ejemplo | Pregunta | Artículo |
-|---------|----------|----------|
-| 1 | ¿Cuántas fallas puedo tener? | Art. 44, Párr. 1 |
-| 2 | Perdí 4 materias, ¿qué pasa? | Art. 76 |
-| 3 | ¿Cuánto tiempo tengo para revisar una nota? | Art. 72 |
-| 4 | ¿Me pueden expulsar por hacer trampa? | Arts. 107 + 108 |
-| 5 | ¿Qué pasa si no me matriculo a tiempo? | Art. 42 |
-
-### 3. Delimitadores XML
-Cada restricción de comportamiento está envuelta en etiquetas XML para separar claramente el contexto de las instrucciones:
-
-```xml
-<restriccion_fuera_dominio>   → preguntas no relacionadas con el reglamento
-<restriccion_ambigua>         → preguntas incompletas o sin contexto
-<restriccion_disciplinaria>   → situaciones del régimen disciplinario (Cap. XV)
-<restriccion_calificaciones>  → consultas sobre notas y escalas
-<restriccion_perdida_cupo>    → situaciones críticas académicas
-```
-
-### 4. Formato de salida estructurado (JSON)
-Cada respuesta devuelve siempre un JSON con 5 campos fijos:
-
-```json
-{
-  "articulo": "Art. XX [+ Parágrafo si aplica]",
-  "respuesta": "Explicación clara y accesible",
-  "cita_textual": "Fragmento literal del reglamento",
-  "accion_recomendada": "Qué hacer / a quién acudir",
-  "advertencia": "Riesgo académico o disciplinario, o null"
-}
-```
-
-### 5. Reglamento inyectado desde el PDF
-El texto real del reglamento se extrae del PDF en tiempo de ejecución con `pypdf` y se inyecta directamente en el prompt como contexto. Esto garantiza que KonsultaBot cite artículos reales y no inventados.
-
-```python
-# El reglamento se carga así:
-texto_reglamento = cargar_reglamento("reglamento-academico-de-pregrado.pdf")
-system_prompt = construir_system_prompt(texto_reglamento)
-```
-
----
-
-## 🗂️ Estructura del repositorio
-
-```
-├── konsulta_bot.py                        # Código fuente principal
-├── .env.example                           # Plantilla de variables de entorno
-├── reglamento-academico-de-pregrado.pdf   # Documento base oficial
-├── .gitignore                             # Excluye .env y archivos innecesarios
-├── requirements.txt                       # Dependencias del proyecto
-└── README.md                              # Resumen del proyecto
-```
-⚠️ NOTA IMPORTANTE: ES IMPORTANTE que en este proyecto la API la API key debe generarse desde un proyecto nuevo en Google AI Studio. El free tier tiene límite de tokens por minuto,por lo que se recomienda generar desde UN PROYECTO NUEVO en Google AI Studio (aistudio.google.com/apikey). Si el proyecto 
-ya tiene cuota agotada, el bot devolverá error 429. 
----
-
-## ⚙️ Instalación y ejecución
+## ⚙️ Instalación y configuración
 
 ```bash
 # 1. Clonar el repositorio
@@ -112,98 +24,157 @@ pip install -r requirements.txt
 
 # 4. Configurar API Key
 cp .env.example .env
-# Editar .env y agregar: GENAI_API_KEY=tu_clave_aqui
+# Editar .env y agregar:
+# GENAI_API_KEY=tu_clave_aqui
 
-# 5. Ejecutar
-python konsulta_bot.py
+# 5. Ejecutar Avance 2 — RAG (versión actual)
+python konsulta_bot_rag.py
 ```
+
+> ⚠️ **Nota sobre la API Key:** Genera tu clave desde un **proyecto nuevo** en [Google AI Studio](https://aistudio.google.com/apikey). El free tier tiene límite de embeddings por día. Si la cuota se agota, el bot devolverá error 429.
+
+> ℹ️ La primera vez que se ejecuta, descarga el modelo de embeddings (~470MB) y construye la base vectorial automáticamente. Las siguientes ejecuciones cargan la base existente directamente.
 
 ---
 
-## 💬 Ejemplo de ejecución
+## ¿Qué es KonsultaBot?
+
+**KonsultaBot** es un asistente conversacional especializado en los **reglamentos institucionales de la Fundación Universitaria Konrad Lorenz**. Está diseñado para ayudar a estudiantes y docentes a consultar artículos de los reglamentos, entender sus derechos y obligaciones, y saber a qué instancia acudir según su situación académica.
+
+El nombre **KonsultaBot** es un juego de palabras entre **Konrad** y **Consulta**.
+
+---
+
+## 🧠 Avance 2 — Pipeline RAG (`konsulta_bot_rag.py`)
+
+### Descripción
+Sistema de Retrieval-Augmented Generation (RAG) que indexa múltiples reglamentos en una base de datos vectorial y recupera solo los fragmentos más relevantes para cada consulta. A diferencia del Avance 1, no inyecta todo el documento en el prompt — solo los fragmentos necesarios.
+
+### Flujo del sistema RAG
 
 ```
-Cargando reglamento desde PDF...
-Reglamento cargado: 87,432 caracteres extraídos.
+PDFs → CARGA (pypdf)
+     → CHUNKING (RecursiveCharacterTextSplitter, 500 chars, overlap 50)
+     → EMBEDDINGS (SentenceTransformers local — paraphrase-multilingual-MiniLM-L12-v2)
+     → BASE VECTORIAL (ChromaDB, similitud coseno)
+     → CONSULTA del usuario
+     → RETRIEVAL (TOP-5 chunks más similares)
+     → PROMPT AUMENTADO (system prompt + few-shot + contexto recuperado)
+     → GEMINI 2.5 Flash
+     → JSON estructurado
+```
 
-================================================================
-🎓 KONSULTA BOT — ASISTENTE DEL REGLAMENTO ACADÉMICO
-Fundación Universitaria Konrad Lorenz
-================================================================
+### Reglamentos indexados
 
-TÚ: ¿Cuántas fallas puedo tener antes de perder una materia?
+| Reglamento | Páginas | Caracteres |
+|-----------|---------|------------|
+| Reglamento Académico de Pregrado | 52 | 109,733 |
+| Reglamento Académico Institucional | 64 | 117,256 |
+| Reglamento Docente | 35 | 62,060 |
+| Reglamento Académico de Posgrado | 34 | 80,285 |
+| **Total** | **185** | **369,334** |
 
-🎓 KONSULTA BOT:
+**Total chunks indexados: 808**
+
+### Componentes del pipeline
+
+| Componente | Tecnología | Descripción |
+|-----------|-----------|-------------|
+| Extracción PDF | `pypdf` | Lee y extrae texto de los PDFs |
+| Chunking | `langchain-text-splitters` | Divide el texto en fragmentos de 500 chars con overlap de 50 |
+| Embeddings | `sentence-transformers` | Vectoriza los chunks localmente, sin API ni cuota |
+| Base vectorial | `ChromaDB` | Almacena y consulta los embeddings por similitud coseno |
+| LLM | `Google Gemini 2.5 Flash` | Genera la respuesta final en JSON |
+| Interfaz | `colorama` | Interfaz de consola con colores |
+
+### Configuración del sistema
+
+| Parámetro | Valor | Descripción |
+|-----------|-------|-------------|
+| `CHUNK_SIZE` | 500 | Tamaño de cada fragmento en caracteres |
+| `CHUNK_OVERLAP` | 50 | Solapamiento entre fragmentos consecutivos |
+| `TOP_K` | 5 | Número de chunks recuperados por consulta |
+| `COLLECTION` | konsulta_reglamentos | Nombre de la colección en ChromaDB |
+| `MODELO_ST` | paraphrase-multilingual-MiniLM-L12-v2 | Modelo de embeddings local |
+| `LLM` | gemini-2.5-flash | Modelo generativo para respuestas |
+
+### Estructuración del prompt
+
+**System Prompt:**
+```
+Eres KonsultaBot, un asistente experto en los Reglamentos Académicos
+de la Fundación Universitaria Konrad Lorenz.
+Responde ÚNICAMENTE con base en el contexto recuperado entre
+<CONTEXTO_RAG> y </CONTEXTO_RAG>.
+Nunca inventes artículos, porcentajes ni fechas que no estén en ese contexto.
+Responde SIEMPRE con un JSON válido con exactamente estos 5 campos,
+sin texto fuera del JSON.
+```
+
+**Few-Shot (3 ejemplos):**
+
+| Pregunta | Artículo | Tipo |
+|---------|---------|------|
+| ¿Cuántas fallas me reprueban? | Art. 44 | Inasistencias |
+| Perdí 4 materias, ¿qué pasa? | Art. 76 | Pérdida de cupo |
+| ¿Cuál es el horario de la cafetería? | null | Fuera de dominio |
+
+**Delimitador XML del contexto recuperado:**
+```xml
+<CONTEXTO_RAG>
+  [fragmentos recuperados de ChromaDB]
+</CONTEXTO_RAG>
+```
+
+**Formato de salida JSON:**
+```json
 {
-  "articulo": "Art. 44, Parágrafo 1",
-  "respuesta": "Puedes acumular máximo un 20% de inasistencias...",
-  "cita_textual": "El número máximo de fallas que un estudiante...",
-  "accion_recomendada": "Lleva un conteo personal de tus asistencias...",
-  "advertencia": null
+  "articulo": "Art. XX o null",
+  "respuesta": "Explicación clara para el estudiante",
+  "cita_textual": "Fragmento literal del reglamento o null",
+  "accion_recomendada": "Qué debe hacer / a quién acudir",
+  "advertencia": "Riesgo académico relevante o null"
 }
 ```
 
 ---
-## 📸 Ejecución del prompt — Escenarios de prueba
 
-Esta sección reemplaza el PDF de ejecución solicitado en la entrega.
-Cada escenario muestra cómo KonsultaBot interpreta el reglamento
-y responde con el artículo exacto en formato JSON.
+## 📁 Estructura del repositorio
 
----
-### CAPTURAS DE PANTALLA
-
-### Escenario 1: Estudiante que pierde materias
-Prueba la restricción `<restriccion_perdida_cupo>`. Se simula un estudiante 
-que pierde una materia progresivamente hasta perder el cupo.
-
-**Consulta 1:** `Perdí por segunda vez una materia`
-El bot cita Art. 74-75 y advierte que la nota mínima sube a 35.
-
-![Escenario 1 - consulta 1](Capturas%20de%20pantalla/escenario1_p1.png)
-
-**Consulta 2:** `¿Y si la pierdo por tercera vez?`
-El bot activa advertencia crítica: pérdida de cupo (Art. 75, num. 3).
-
-![Escenario 1 - consulta 2](Capturas%20de%20pantalla/escenario1_p2.png)
-
-**Consulta 3:** `salir`
-Al finalizar la sesión el bot muestra el historial completo de consultas.
-
-![Historial escenario 1](Capturas%20de%20pantalla/historial_1_escenario_1.png)
-![Historial escenario 2](Capturas%20de%20pantalla/historial_2_escenario_2.png)
----
-
-### Escenario 2: Faltas de asistencia
-Prueba la restricción `<restriccion_calificaciones>`. Se simula un estudiante
-que pregunta sobre inasistencias y excusas médicas.
-
-**Consulta 1:** `¿Cuántas fallas puedo tener antes de perder una materia?`
-El bot cita Art. 44 y explica el límite del 20% de inasistencias.
-
-![Escenario 2 - consulta 1](Capturas%20de%20pantalla/escenario2_p1.png)
-
-**Consulta 2:** `¿Qué pasa si tengo una excusa médica?`
-El bot cita Art. 65 y aclara que la excusa no retira las fallas acumuladas.
-![Escenario 2 - consulta 2](Capturas%20de%20pantalla/escenario2_p2.png)
-
-
-**Historial de sesión:**
-Al finalizar, el bot muestra el resumen completo de la conversación.
-![Historial escenario 1](Capturas%20de%20pantalla/historial_1_escenario_2.png)
-![Historial escenario 2](Capturas%20de%20pantalla/historial_2_escenario_2.png)
-
-
-
+```
+konsulta-bot/
+│
+├── Avance 1/
+│   ├── Capturas de pantalla Avance 1/
+│   └── konsulta_bot.py
+├── Capturas de pantalla Avance 2/
+├── pdfs/
+│   ├── reglamento-academico-de-pregrado.pdf
+│   ├── reglamento-académico-institucional.pdf
+│   ├── reglamento-docente.pdf
+│   └── reglamento-posgrado.pdf
+├── .env.example
+├── .gitignore
+├── konsulta_bot_rag.py
+├── README.md
+└── requirements.txt
+```
 
 ---
 
 ## 📦 Dependencias
 
 ```
-google-genai
-python-dotenv
-pypdf
+# Avance 2 — RAG
+chromadb>=0.5.0
+sentence-transformers
+langchain-text-splitters
+colorama
+
+# Avance 1 — Prompt Stuffing
+google-genai>=1.0.0
+pypdf>=4.0.0
+python-dotenv>=1.0.0
 ```
 
 ---
@@ -212,5 +183,38 @@ pypdf
 
 - **Python 3.10+**
 - **Google Gemini 2.5 Flash** via `google-genai`
-- **pypdf** — extracción de texto del PDF
-- **Prompt Engineering**: System Prompt estructurado + Few-Shot + Delimitadores XML + JSON output
+- **pypdf** — extracción de texto de PDFs
+- **SentenceTransformers** — embeddings semánticos locales sin límites de API
+- **ChromaDB** — base de datos vectorial persistente
+- **LangChain Text Splitters** — chunking inteligente por separadores
+- **colorama** — interfaz de consola con colores
+- **Prompt Engineering**: System Prompt + Few-Shot + XML + JSON output
+
+---
+
+## 📎 Avance 1 — Prompt Stuffing (`Avance 1/konsulta_bot.py`)
+
+> Versión inicial del proyecto. Documentada aquí como referencia del proceso.
+
+### Descripción
+El reglamento completo se extrae del PDF y se inyecta directamente en el prompt como contexto en cada consulta. El LLM responde con base en todo el texto del reglamento de pregrado.
+
+### Técnicas de Prompting implementadas
+
+| Técnica | Descripción |
+|---------|-------------|
+| **System Prompt estructurado** | 6 secciones: ROL, TAREA, CONTEXTO, RESTRICCIONES, FORMATO, EJEMPLOS |
+| **Few-Shot Prompting** | 5 ejemplos de pares pregunta/respuesta |
+| **Delimitadores XML** | Etiquetas `<restriccion_*>` para separar comportamientos |
+| **Formato JSON** | Salida estructurada con 5 campos fijos |
+| **Prompt Stuffing** | Texto completo del PDF inyectado como contexto |
+
+### Progreso entre Avance 1 y Avance 2
+
+| | Avance 1 | Avance 2 |
+|--|---------|---------|
+| Contexto | Todo el reglamento en el prompt | Solo los 5 chunks más relevantes |
+| Documentos | 1 PDF | 4 PDFs |
+| Embeddings | No aplica | SentenceTransformers (local, sin cuota) |
+| Base vectorial | No aplica | ChromaDB persistente |
+| Escalabilidad | Limitada por tokens | Alta — soporta cualquier cantidad de PDFs |
