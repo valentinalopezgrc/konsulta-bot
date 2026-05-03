@@ -22,9 +22,9 @@ MODELO_ST = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 PDF_DIR       = Path("pdfs")
 CHROMA_DIR    = "./chroma_db"
 COLLECTION    = "konsulta_reglamentos"
-CHUNK_SIZE    = 500
-CHUNK_OVERLAP = 50
-TOP_K         = 5
+CHUNK_SIZE    = 800  
+CHUNK_OVERLAP = 100  
+TOP_K         = 7     
 
 # ══════════════════════════════════════════
 # PASO 1 — CARGAR PDFs
@@ -228,7 +228,7 @@ def loop_interactivo(col):
 
         if cita:
             print(f"\n  {Fore.CYAN}📝 Cita textual:{Style.RESET_ALL}")
-            print(f"  {Fore.WHITE}«{cita[:200]}»{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}«{cita[:400]}»{Style.RESET_ALL}")
 
         if accion:
             print(f"\n  {Fore.GREEN}✅ Acción recomendada:{Style.RESET_ALL}")
