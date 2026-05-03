@@ -5,7 +5,7 @@ Materia: Desarrollo de Aplicaciones con IA — Konrad Lorenz
 Pipeline: PDF → Chunks → Embeddings → ChromaDB → Gemini
 """
 
-import os, json, time
+import os, json
 from pathlib import Path
 from dotenv import load_dotenv
 import pypdf
@@ -245,7 +245,7 @@ def loop_interactivo(col):
 # ══════════════════════════════════════════
 def main():
     print("\n" + "█"*60)
-    print("  KONSULTABOT RAG — ASISTENTE DE REGLAMENTOS ACADÉMICOS")
+    print("  KONSULTABOT RAG — ASISTENTE DE REGLAMENTOS INSTITUCIONALES")
     print("  Fundación Universitaria Konrad Lorenz")
     print("  Pipeline: PDF → Chunks → Embeddings → ChromaDB → Gemini")
     print("  Embeddings: SentenceTransformers (local) | LLM: Gemini")
