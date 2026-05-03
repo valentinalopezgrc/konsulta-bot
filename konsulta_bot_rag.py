@@ -185,7 +185,7 @@ def loop_interactivo(col):
     print(f"{Fore.LIGHTGREEN_EX}{'━'*60}{Style.RESET_ALL}")
 
     # ── Saludo ──
-    print(f"\n{Fore.WHITE}  Bienvenido(a). Soy {Fore.MAGENTA}KonsultaBot{Fore.WHITE}, tu asistente virtual")
+    print(f"\n{Fore.WHITE}  Bienvenido(a)! Soy {Fore.MAGENTA}KonsultaBot{Fore.WHITE}, tu asistente virtual")
     print(f"  especializado en los reglamentos institucionales de la Fundación Universitaria Konrad Lorenz.{Style.RESET_ALL}")
     print(f"\n{Fore.WHITE}  Estoy aquí para ayudarte con información relacionada a:{Style.RESET_ALL}")
     print(f"{Fore.WHITE}     📘 Reglamento Académico de Pregrado{Style.RESET_ALL}")
