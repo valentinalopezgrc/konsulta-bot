@@ -138,14 +138,37 @@ Responde SIEMPRE con un JSON válido con exactamente estos 5 campos, sin texto f
   "accion_recomendada": "Qué debe hacer / a quién acudir",
   "advertencia": "Riesgo académico relevante o null"
 }"""
-
 FEW_SHOT = [
-    ("¿Cuántas fallas me reprueban?",
-     '{"articulo":"Art. 44","respuesta":"Máximo 20% de inasistencias. Si superas ese límite la asignatura se califica con cero.","cita_textual":"El número máximo de fallas será de un 20% sobre el total de horas.","accion_recomendada":"Lleva conteo personal de asistencias.","advertencia":null}'),
-    ("Perdí 4 materias, ¿qué pasa?",
-     '{"articulo":"Art. 76","respuesta":"Perder 4 o más asignaturas implica pérdida automática del cupo.","cita_textual":"Quien en un mismo período pierde cuatro (4) o más asignaturas pierde el cupo.","accion_recomendada":"Solicita reingreso al Consejo de Facultad (Art. 77).","advertencia":"Situación crítica — consultar urgentemente al Consejo de Facultad"}'),
-    ("¿Cuál es el horario de la cafetería?",
-     '{"articulo":null,"respuesta":"No encontré información sobre eso en los reglamentos académicos.","cita_textual":null,"accion_recomendada":"Consulta directamente a la universidad.","advertencia":null}'),
+    # PREGRADO / INSTITUCIONAL — Fallas
+    (
+        "¿Cuántas fallas me reprueban una materia?",
+        '{"articulo":"Art. 43, Párrafo 1","respuesta":"El máximo de ausencias permitido en una asignatura es del 20% sobre el total de horas del periodo académico. Si igualas o superas ese porcentaje, la asignatura se califica automáticamente con cero y queda registrada como reprobada por inasistencia.","cita_textual":"El número máximo de ausencias que un estudiante puede acumular en una asignatura será de un 20% sobre el total de horas que la asignatura tiene en el periodo académico.","accion_recomendada":"Lleva un conteo personal de tus asistencias desde el primer día. Si tienes una situación médica o de fuerza mayor, preséntate ante el Decano (Art. 43, Párrafo 5).","advertencia":"Aunque pierdas la asignatura por fallas, puedes seguir asistiendo para realimentación, pero esa nota no se registra formalmente."}'
+    ),
+    # INSTITUCIONAL — Pérdida de cupo
+    (
+        "Perdí 4 materias este semestre, ¿pierdo el cupo?",
+        '{"articulo":"Art. 79","respuesta":"Sí. Quien en un mismo periodo repruebe cuatro o más asignaturas pierde el cupo en el programa que esté cursando.","cita_textual":"Quien en un mismo periodo repruebe cuatro (4) o más asignaturas, perderá el cupo en el programa que esté cursando.","accion_recomendada":"Puedes solicitar reintegro ante el Consejo de Facultad (Art. 80), pero es obligatorio haber recibido asesoría del Centro de Consejería Académica.","advertencia":"Situación crítica. Si es la segunda vez que pierdes el cupo, el reintegro lo decide el Consejo Académico por única vez."}'
+    ),
+    # PREGRADO — Supletorio
+    (
+        "No pude presentar un parcial por enfermedad, ¿puedo pedir supletorio?",
+        '{"articulo":"Art. 65 y Art. 66","respuesta":"Sí, puedes solicitar un examen supletorio si la causa tiene carácter de fuerza mayor verificable. Tienes tres días hábiles desde la fecha del parcial para presentar la solicitud escrita y soportada ante la Coordinación Académica.","cita_textual":"La razón válida para autorizar la presentación de un supletorio debe tener el carácter de fuerza mayor verificable, es decir, ser totalmente ajena a la voluntad y decisión del estudiante.","accion_recomendada":"1) Consigue la excusa médica. 2) Presenta solicitud escrita a la Coordinación dentro de los 3 días hábiles. 3) Paga los derechos pecuniarios antes de la prueba.","advertencia":"La excusa NO retira las fallas de asistencia acumuladas. Si no asistes al supletorio autorizado, pierdes el derecho y te califican con cero."}'
+    ),
+    # POSGRADO — Fallas
+    (
+        "¿Cuántas fallas me reprueban en posgrado?",
+        '{"articulo":"Art. 31, Parágrafo 1","respuesta":"En posgrado el máximo de inasistencias es del 15% sobre el total de horas de la asignatura. Si iguala o supera ese porcentaje, la asignatura se califica con cero y queda reprobada por inasistencia.","cita_textual":"El número máximo de fallas que un estudiante puede acumular en una asignatura será de un 15% sobre el total de horas que la asignatura tiene en el período académico.","accion_recomendada":"Lleva conteo personal de asistencias. El Decano de Posgrados tiene discrecionalidad en situaciones de fuerza mayor (Art. 31, Parágrafo 5).","advertencia":"Las excusas médicas NO retiran las fallas — solo habilitan supletorios. La asignatura perdida por inasistencia debe cursarse como repitente."}'
+    ),
+    # DOCENTE — Fraude
+    (
+        "¿Qué pasa si un profesor comete plagio?",
+        '{"articulo":"Art. 42 literal i) — Reglamento Docente","respuesta":"Apropiarse de trabajos ajenos o faltar a la integridad académica es una falta disciplinaria explícita. Según su gravedad puede sancionarse con amonestación escrita, suspensión sin remuneración de 3 a 8 días, o terminación del contrato.","cita_textual":"Faltar a la integridad académica, apropiarse o aprovecharse en forma indebida de trabajos de investigación, textos, artículos, obras o materiales de propiedad de otros autores.","accion_recomendada":"La investigación la abre la Decanatura (Art. 46). El docente puede interponer recurso de reposición ante la Decanatura y apelación ante la Vicerrectoría Académica.","advertencia":"El Reglamento Docente vigente es el Acuerdo No. 19 de septiembre 2025."}'
+    ),
+    # FUERA DE DOMINIO
+    (
+        "¿Cuál es el horario de la cafetería?",
+        '{"articulo":null,"respuesta":"Esa información no se encuentra en los reglamentos institucionales disponibles.","cita_textual":null,"accion_recomendada":"Consulta directamente la página web de la Konrad Lorenz o comunícate con la administración del campus.","advertencia":null}'
+    ),
 ]
 
 def generar_respuesta(pregunta: str, chunks) -> dict:
@@ -228,7 +251,7 @@ def loop_interactivo(col):
 
         if cita:
             print(f"\n  {Fore.CYAN}📝 Cita textual:{Style.RESET_ALL}")
-            print(f"  {Fore.WHITE}«{cita[:400]}»{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}«{cita[:500]}»{Style.RESET_ALL}")
 
         if accion:
             print(f"\n  {Fore.GREEN}✅ Acción recomendada:{Style.RESET_ALL}")
