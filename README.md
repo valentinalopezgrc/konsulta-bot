@@ -48,7 +48,7 @@ El nombre **KonsultaBot** es un juego de palabras entre **Konrad** y **Consulta*
 ## 🧠 Avance 2 — Pipeline RAG (`konsulta_bot_rag.py`)
 
 ### Descripción
-Sistema de Retrieval-Augmented Generation (RAG) que indexa múltiples reglamentos en una base de datos vectorial y recupera solo los fragmentos más relevantes para cada consulta. A diferencia del Avance 1, no inyecta todo el documento en el prompt — solo los fragmentos necesarios.
+Sistema de Retrieval-Augmented Generation (RAG) que indexa múltiples reglamentos en una base de datos vectorial y recupera solo los fragmentos más relevantes para cada consulta. A diferencia del Avance 1, no inyecta todo el documento en el prompt, solo los fragmentos necesarios.
 
 ### Flujo del sistema RAG
 
@@ -199,7 +199,7 @@ python-dotenv>=1.0.0
 ### Descripción
 El reglamento completo se extrae del PDF y se inyecta directamente en el prompt como contexto en cada consulta. El LLM responde con base en todo el texto del reglamento de pregrado.
 
-### Técnicas de Prompting implementadas
+### Técnicas de Prompting implementadas.
 
 | Técnica | Descripción |
 |---------|-------------|
