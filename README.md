@@ -54,11 +54,11 @@ Sistema de Retrieval-Augmented Generation (RAG) que indexa múltiples reglamento
 
 ```
 PDFs → CARGA (pypdf)
-     → CHUNKING (RecursiveCharacterTextSplitter, 500 chars, overlap 50)
+     → CHUNKING (RecursiveCharacterTextSplitter, 800 chars, overlap 100)
      → EMBEDDINGS (SentenceTransformers local — paraphrase-multilingual-MiniLM-L12-v2)
      → BASE VECTORIAL (ChromaDB, similitud coseno)
      → CONSULTA del usuario
-     → RETRIEVAL (TOP-5 chunks más similares)
+     → RETRIEVAL (TOP-7 chunks más similares)
      → PROMPT AUMENTADO (system prompt + few-shot + contexto recuperado)
      → GEMINI 2.5 Flash
      → JSON estructurado
@@ -74,14 +74,13 @@ PDFs → CARGA (pypdf)
 | Reglamento Académico de Posgrado | 34 | 80,285 |
 | **Total** | **185** | **369,334** |
 
-**Total chunks indexados: 808**
 
 ### Componentes del pipeline
 
 | Componente | Tecnología | Descripción |
 |-----------|-----------|-------------|
 | Extracción PDF | `pypdf` | Lee y extrae texto de los PDFs |
-| Chunking | `langchain-text-splitters` | Divide el texto en fragmentos de 500 chars con overlap de 50 |
+| Chunking | `langchain-text-splitters` | Divide el texto en fragmentos de 800 chars con overlap de 100 |
 | Embeddings | `sentence-transformers` | Vectoriza los chunks localmente, sin API ni cuota |
 | Base vectorial | `ChromaDB` | Almacena y consulta los embeddings por similitud coseno |
 | LLM | `Google Gemini 2.5 Flash` | Genera la respuesta final en JSON |
@@ -91,9 +90,9 @@ PDFs → CARGA (pypdf)
 
 | Parámetro | Valor | Descripción |
 |-----------|-------|-------------|
-| `CHUNK_SIZE` | 500 | Tamaño de cada fragmento en caracteres |
-| `CHUNK_OVERLAP` | 50 | Solapamiento entre fragmentos consecutivos |
-| `TOP_K` | 5 | Número de chunks recuperados por consulta |
+| `CHUNK_SIZE` | 800 | Tamaño de cada fragmento en caracteres |
+| `CHUNK_OVERLAP` | 100 | Solapamiento entre fragmentos consecutivos |
+| `TOP_K` | 7 | Número de chunks recuperados por consulta |
 | `COLLECTION` | konsulta_reglamentos | Nombre de la colección en ChromaDB |
 | `MODELO_ST` | paraphrase-multilingual-MiniLM-L12-v2 | Modelo de embeddings local |
 | `LLM` | gemini-2.5-flash | Modelo generativo para respuestas |
@@ -213,7 +212,7 @@ El reglamento completo se extrae del PDF y se inyecta directamente en el prompt 
 
 | | Avance 1 | Avance 2 |
 |--|---------|---------|
-| Contexto | Todo el reglamento en el prompt | Solo los 5 chunks más relevantes |
+| Contexto | Todo el reglamento en el prompt | Solo los 7 chunks más relevantes |
 | Documentos | 1 PDF | 4 PDFs |
 | Embeddings | No aplica | SentenceTransformers (local, sin cuota) |
 | Base vectorial | No aplica | ChromaDB persistente |
