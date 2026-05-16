@@ -27,13 +27,16 @@ cp .env.example .env
 # Editar .env y agregar:
 # GENAI_API_KEY=tu_clave_aqui
 
-# 5. Ejecutar Avance 2 — RAG (versión actual)
+# 5. Ejecutar la interfaz gráfica (recomendado)
+python konsulta_bot_gui.py
+
+# O ejecutar en modo consola
 python konsulta_bot_rag.py
 ```
 
-> ⚠️ **Nota sobre la API Key:** Genera tu clave desde un **proyecto nuevo** en [Google AI Studio](https://aistudio.google.com/apikey). El free tier tiene límite de embeddings por día. Si la cuota se agota, el bot devolverá error 429.
+> ⚠️ **Nota sobre la API Key:** Genera tu clave desde un **proyecto nuevo** en [Google AI Studio](https://aistudio.google.com/apikey). El free tier tiene límite de embeddings por día (~1500 embeddings). Si la cuota se agota, el bot devolverá error 429. Se recomienda usar una API key con cuota disponible.
 
-> ℹ️ La primera vez que se ejecuta, descarga el modelo de embeddings (~470MB) y construye la base vectorial automáticamente. Las siguientes ejecuciones cargan la base existente directamente.
+> ℹ️ La primera vez que se ejecuta, construye la base vectorial automáticamente llamando a la API de Gemini Embeddings (tarda ~15 minutos por los rate limits del plan gratuito). Las siguientes ejecuciones cargan la base existente directamente.
 
 ---
 
@@ -45,23 +48,23 @@ El nombre **KonsultaBot** es un juego de palabras entre **Konrad** y **Consulta*
 
 ---
 
-## 🧠 Avance 2 — Pipeline RAG (`konsulta_bot_rag.py`)
+## 🚀 Entrega Final — RAG con Gemini Embeddings + GUI Gradio
 
 ### Descripción
-Sistema de Retrieval-Augmented Generation (RAG) que indexa múltiples reglamentos en una base de datos vectorial y recupera solo los fragmentos más relevantes para cada consulta. A diferencia del Avance 1, no inyecta todo el documento en el prompt, solo los fragmentos necesarios.
+Versión final del sistema RAG con dos mejoras principales respecto al Avance 2: migración del modelo de embeddings de SentenceTransformers a **Gemini Embedding 001** para mejor comprensión del español jurídico, y adición de una **interfaz gráfica web** construida con Gradio.
 
 ### Flujo del sistema RAG
 
 ```
 PDFs → CARGA (pypdf)
      → CHUNKING (RecursiveCharacterTextSplitter, 800 chars, overlap 100)
-     → EMBEDDINGS (SentenceTransformers local — paraphrase-multilingual-MiniLM-L12-v2)
+     → EMBEDDINGS (Gemini Embedding 001 via API — gemini-embedding-001)
      → BASE VECTORIAL (ChromaDB, similitud coseno)
      → CONSULTA del usuario
      → RETRIEVAL (TOP-7 chunks más similares)
      → PROMPT AUMENTADO (system prompt + few-shot + contexto recuperado)
      → GEMINI 2.5 Flash
-     → JSON estructurado
+     → JSON estructurado → GUI Gradio
 ```
 
 ### Reglamentos indexados
@@ -74,17 +77,16 @@ PDFs → CARGA (pypdf)
 | Reglamento Académico de Posgrado | 34 | 80,285 |
 | **Total** | **185** | **369,334** |
 
-
 ### Componentes del pipeline
 
 | Componente | Tecnología | Descripción |
 |-----------|-----------|-------------|
 | Extracción PDF | `pypdf` | Lee y extrae texto de los PDFs |
 | Chunking | `langchain-text-splitters` | Divide el texto en fragmentos de 800 chars con overlap de 100 |
-| Embeddings | `sentence-transformers` | Vectoriza los chunks localmente, sin API ni cuota |
+| Embeddings | `Gemini Embedding 001` | Vectoriza los chunks vía API de Google — mejor semántica en español jurídico |
 | Base vectorial | `ChromaDB` | Almacena y consulta los embeddings por similitud coseno |
 | LLM | `Google Gemini 2.5 Flash` | Genera la respuesta final en JSON |
-| Interfaz | `colorama` | Interfaz de consola con colores |
+| Interfaz | `Gradio` | Interfaz web con historial de conversación |
 
 ### Configuración del sistema
 
@@ -94,7 +96,7 @@ PDFs → CARGA (pypdf)
 | `CHUNK_OVERLAP` | 100 | Solapamiento entre fragmentos consecutivos |
 | `TOP_K` | 7 | Número de chunks recuperados por consulta |
 | `COLLECTION` | konsulta_reglamentos | Nombre de la colección en ChromaDB |
-| `MODELO_ST` | paraphrase-multilingual-MiniLM-L12-v2 | Modelo de embeddings local |
+| `MODELO_EMBEDDINGS` | gemini-embedding-001 | Modelo de embeddings vía API de Google |
 | `LLM` | gemini-2.5-flash | Modelo generativo para respuestas |
 
 ### Estructuración del prompt
@@ -110,20 +112,15 @@ Responde SIEMPRE con un JSON válido con exactamente estos 5 campos,
 sin texto fuera del JSON.
 ```
 
-**Few-Shot (3 ejemplos):**
+**Few-Shot (5 ejemplos):**
 
 | Pregunta | Artículo | Tipo |
 |---------|---------|------|
-| ¿Cuántas fallas me reprueban? | Art. 44 | Inasistencias |
-| Perdí 4 materias, ¿qué pasa? | Art. 76 | Pérdida de cupo |
+| ¿Cuántas fallas me reprueban? | Art. 43 Par.1 | Inasistencias pregrado |
+| Perdí 4 materias, ¿qué pasa? | Art. 79 | Pérdida de cupo |
+| ¿Puedo pedir supletorio? | Art. 65 y 66 | Prueba especial |
+| ¿Cuántas fallas en posgrado? | Art. 31 Par.1 | Inasistencias posgrado |
 | ¿Cuál es el horario de la cafetería? | null | Fuera de dominio |
-
-**Delimitador XML del contexto recuperado:**
-```xml
-<CONTEXTO_RAG>
-  [fragmentos recuperados de ChromaDB]
-</CONTEXTO_RAG>
-```
 
 **Formato de salida JSON:**
 ```json
@@ -135,6 +132,23 @@ sin texto fuera del JSON.
   "advertencia": "Riesgo académico relevante o null"
 }
 ```
+
+### Resultados de evaluación (10 preguntas)
+
+| P# | Reglamento | Tipo | Resultado |
+|----|-----------|------|-----------|
+| P1 | Institucional | Textual directa | ✅ Correcto |
+| P2 | Pregrado | Textual directa | ✅ Correcto |
+| P3 | Institucional | Vocabulario diferente | ✅ Correcto |
+| P4 | Posgrado | Vocabulario diferente | ✅ Correcto |
+| P5 | Institucional | Multi-chunk | ⚠️ Parcial |
+| P6 | Institucional | Multi-chunk | ✅ Correcto |
+| P7 | Posgrado | Multi-chunk | ✅ Correcto |
+| P8 | Docente | Anti-alucinación | ✅ Correcto |
+| P9 | Docente | Anti-alucinación | ✅ Correcto |
+| P10 | Ninguno | Anti-alucinación | ✅ Correcto |
+
+**Resultado global: 9/10 correctas**
 
 ---
 
@@ -149,11 +163,12 @@ konsulta-bot/
 ├── Capturas de pantalla Avance 2/
 ├── pdfs/
 │   ├── reglamento-academico-de-pregrado.pdf
-│   ├── reglamento-académico-institucional.pdf
+│   ├── reglamento-academico-institucional.pdf
 │   ├── reglamento-docente.pdf
-│   └── reglamento-posgrado.pdf
+│   └── reglamento-academico-de-posgrado.pdf
 ├── .env.example
 ├── .gitignore
+├── konsulta_bot_gui.py
 ├── konsulta_bot_rag.py
 ├── README.md
 └── requirements.txt
@@ -164,16 +179,14 @@ konsulta-bot/
 ## 📦 Dependencias
 
 ```
-# Avance 2 — RAG
 chromadb>=0.5.0
-sentence-transformers
 langchain-text-splitters
+langchain-google-genai
 colorama
-
-# Avance 1 — Prompt Stuffing
 google-genai>=1.0.0
 pypdf>=4.0.0
 python-dotenv>=1.0.0
+gradio>=6.0.0
 ```
 
 ---
@@ -181,39 +194,39 @@ python-dotenv>=1.0.0
 ## 🛠️ Tecnologías usadas
 
 - **Python 3.10+**
-- **Google Gemini 2.5 Flash** via `google-genai`
+- **Google Gemini 2.5 Flash** via `google-genai` — modelo generativo
+- **Google Gemini Embedding 001** via `langchain-google-genai` — embeddings semánticos
 - **pypdf** — extracción de texto de PDFs
-- **SentenceTransformers** — embeddings semánticos locales sin límites de API
 - **ChromaDB** — base de datos vectorial persistente
 - **LangChain Text Splitters** — chunking inteligente por separadores
+- **Gradio** — interfaz web conversacional
 - **colorama** — interfaz de consola con colores
 - **Prompt Engineering**: System Prompt + Few-Shot + XML + JSON output
 
 ---
 
-## 📎 Avance 1 — Prompt Stuffing (`Avance 1/konsulta_bot.py`)
+## 📎 Evolución del proyecto
 
-> Versión inicial del proyecto. Documentada aquí como referencia del proceso.
+### Avance 1 — Prompt Stuffing (`Avance 1/konsulta_bot.py`)
 
-### Descripción
-El reglamento completo se extrae del PDF y se inyecta directamente en el prompt como contexto en cada consulta. El LLM responde con base en todo el texto del reglamento de pregrado.
-
-### Técnicas de Prompting implementadas.
+El reglamento completo se extrae del PDF y se inyecta directamente en el prompt como contexto en cada consulta.
 
 | Técnica | Descripción |
 |---------|-------------|
 | **System Prompt estructurado** | 6 secciones: ROL, TAREA, CONTEXTO, RESTRICCIONES, FORMATO, EJEMPLOS |
 | **Few-Shot Prompting** | 5 ejemplos de pares pregunta/respuesta |
-| **Delimitadores XML** | Etiquetas `<restriccion_*>` para separar comportamientos |
+| **Delimitadores XML** | Etiquetas para separar comportamientos |
 | **Formato JSON** | Salida estructurada con 5 campos fijos |
 | **Prompt Stuffing** | Texto completo del PDF inyectado como contexto |
 
-### Progreso entre Avance 1 y Avance 2
+### Comparativa entre versiones
 
-| | Avance 1 | Avance 2 |
-|--|---------|---------|
-| Contexto | Todo el reglamento en el prompt | Solo los 7 chunks más relevantes |
-| Documentos | 1 PDF | 4 PDFs |
-| Embeddings | No aplica | SentenceTransformers (local, sin cuota) |
-| Base vectorial | No aplica | ChromaDB persistente |
-| Escalabilidad | Limitada por tokens | Alta — soporta cualquier cantidad de PDFs |
+| | Avance 1 | Avance 2 | Entrega Final |
+|--|---------|---------|--------------|
+| Contexto | Todo el reglamento en el prompt | 7 chunks más relevantes | 7 chunks más relevantes |
+| Documentos | 1 PDF | 4 PDFs | 4 PDFs |
+| Embeddings | No aplica | SentenceTransformers (local) | Gemini Embedding 001 (API) |
+| Base vectorial | No aplica | ChromaDB | ChromaDB |
+| Interfaz | Consola | Consola | Gradio (web) |
+| Precisión | ~60% | 6/10 | 9/10 |
+| Escalabilidad | Limitada por tokens | Alta | Alta |
