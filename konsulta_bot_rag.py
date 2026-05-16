@@ -10,14 +10,17 @@ from pathlib import Path
 from dotenv import load_dotenv
 import pypdf
 import chromadb
-from sentence_transformers import SentenceTransformer
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from google import genai
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 API_KEY = os.getenv("GENAI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 client  = genai.Client(api_key=API_KEY)
-MODELO_ST = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+MODELO_EMBEDDINGS = GoogleGenerativeAIEmbeddings(
+    model="gemini-embedding-001",
+    google_api_key=API_KEY
+)
 
 PDF_DIR       = Path("pdfs")
 CHROMA_DIR    = "./chroma_db"
@@ -74,10 +77,10 @@ def crear_chunks(documentos):
     return chunks
 
 # ══════════════════════════════════════════
-# PASO 3 — EMBEDDINGS locales con SentenceTransformers
+# PASO 3 — EMBEDDINGS con Gemini Embedding 001
 # ══════════════════════════════════════════
 def obtener_embedding(texto: str, task: str = "RETRIEVAL_DOCUMENT"):
-    return MODELO_ST.encode(texto).tolist()
+    return MODELO_EMBEDDINGS.embed_query(texto)
 
 # ══════════════════════════════════════════
 # PASO 4 — BASE VECTORIAL con ChromaDB
@@ -89,7 +92,15 @@ def construir_base_vectorial(chunks):
     total = len(chunks)
     print(f"  🔢 Vectorizando {total} chunks localmente...")
     textos_todos = [c["text"] for c in chunks]
-    embeddings_todos = MODELO_ST.encode(textos_todos, show_progress_bar=True).tolist()
+    import time
+    embeddings_todos = []
+    for i in range(0, len(textos_todos), 50):
+        batch = textos_todos[i:i+50]
+        embs = MODELO_EMBEDDINGS.embed_documents(batch)
+        embeddings_todos.extend(embs)
+        print(f"  Lote {i//50+1}: {min(i+50, len(textos_todos))}/{len(textos_todos)}")
+        if i + 50 < len(textos_todos):
+            time.sleep(65)
     ids = [c["id"] for c in chunks]
     metadatos = [{"source": c["source"], "chunk_index": c["chunk_index"]} for c in chunks]
     for i in range(0, len(ids), 50):
@@ -271,7 +282,7 @@ def main():
     print("  KONSULTABOT RAG — ASISTENTE DE REGLAMENTOS INSTITUCIONALES")
     print("  Fundación Universitaria Konrad Lorenz")
     print("  Pipeline: PDF → Chunks → Embeddings → ChromaDB → Gemini")
-    print("  Embeddings: SentenceTransformers (local) | LLM: Gemini")
+    print("  Embeddings: Gemini Embedding 001 | LLM: Gemini 2.5 Flash")
     print("█"*60)
     chroma_existe = Path(CHROMA_DIR).exists() and any(Path(CHROMA_DIR).iterdir())
     if chroma_existe:
