@@ -1,4 +1,4 @@
-# 🎓 KonsultaBot — Asistente de Reglamentos Institucionales
+# 🎓 KonsultaBot - Asistente de Reglamentos Institucionales
 ### Fundación Universitaria Konrad Lorenz
 
 > **Materia:** Desarrollo de Aplicaciones con IA  
@@ -9,7 +9,7 @@
 
 ## ¿Qué es KonsultaBot?
 
-**KonsultaBot** es un asistente conversacional especializado en los **reglamentos institucionales de la Fundación Universitaria Konrad Lorenz**. Permite a estudiantes y docentes consultar artículos, entender derechos y obligaciones, y saber a qué instancia acudir — usando lenguaje natural, incluyendo vocabulario coloquial.
+**KonsultaBot** es un asistente conversacional especializado en los **reglamentos institucionales de la Fundación Universitaria Konrad Lorenz**. Permite a estudiantes y docentes consultar artículos, entender derechos y obligaciones, y saber a qué instancia acudir - usando lenguaje natural, incluyendo vocabulario coloquial.
 
 El nombre es un juego de palabras entre **Konrad** y **Consulta**.
 
@@ -125,7 +125,7 @@ konsulta-bot/
 
 ## Pipeline detallado
 
-### Paso 1 — Carga de PDFs
+### Paso 1 - Carga de PDFs
 ```python
 reader = pypdf.PdfReader(str(path))
 texto = ""
@@ -135,7 +135,7 @@ for pagina in reader.pages:
 ```
 Se extraen los 4 reglamentos como texto plano. Total: 185 páginas, ~369K caracteres.
 
-### Paso 2 — Chunking
+### Paso 2 - Chunking
 ```python
 splitter = RecursiveCharacterTextSplitter(
     chunk_size=800,
@@ -145,7 +145,7 @@ splitter = RecursiveCharacterTextSplitter(
 ```
 El solapamiento de 100 caracteres garantiza que artículos que cruzan dos chunks no se pierdan a la mitad. Resultado: **535 chunks**.
 
-### Paso 3 — Embeddings
+### Paso 3 - Embeddings
 
 **Modelo elegido:** `gemini-embedding-001` de Google
 
@@ -163,7 +163,7 @@ MODELO_EMBEDDINGS = GoogleGenerativeAIEmbeddings(
 embeddings = MODELO_EMBEDDINGS.embed_documents(textos)
 ```
 
-**Prueba de similitud coseno — vocabulario coloquial vs. formal:**
+**Prueba de similitud coseno - vocabulario coloquial vs. formal:**
 
 | Consulta del usuario | Chunk recuperado | Similitud |
 |---|---|---|
@@ -171,7 +171,7 @@ embeddings = MODELO_EMBEDDINGS.embed_documents(textos)
 | "me sacan de la carrera" | "perderá el cupo en el programa" (Art. 76) | 0.831 |
 | "nota para pasar" | "nota mínima aprobatoria" (Art. 78) | 0.819 |
 
-### Paso 4 — Base vectorial (ChromaDB)
+### Paso 4 - Base vectorial (ChromaDB)
 ```python
 col = db.get_or_create_collection(
     COLLECTION,
@@ -181,9 +181,9 @@ col.add(ids=ids, embeddings=embeddings, documents=textos, metadatas=metadatos)
 ```
 - 535 chunks indexados en disco (`chroma_db/`)
 - Búsqueda ANN con HNSW, métrica coseno
-- Se carga desde disco en ejecuciones posteriores — no re-vectoriza
+- Se carga desde disco en ejecuciones posteriores - no re-vectoriza
 
-### Paso 5 — Retrieval
+### Paso 5 - Retrieval
 ```python
 TOP_K = 7
 emb = obtener_embedding(pregunta)
@@ -191,7 +191,7 @@ res = col.query(query_embeddings=[emb], n_results=TOP_K,
                 include=["documents", "metadatas", "distances"])
 ```
 
-### Paso 6 — Construcción del prompt aumentado
+### Paso 6 - Construcción del prompt aumentado
 
 ```
 [SYSTEM PROMPT]
@@ -199,7 +199,7 @@ res = col.query(query_embeddings=[emb], n_results=TOP_K,
   Nunca inventes artículos, porcentajes ni fechas.
   Responde siempre con JSON con 5 campos exactos.
 
-[FEW-SHOT EXAMPLES — 6 ejemplos]
+[FEW-SHOT EXAMPLES - 6 ejemplos]
   Inasistencias pregrado · Pérdida de cupo · Supletorio
   Inasistencias posgrado · Docente plagio · Fuera de dominio
 
@@ -222,7 +222,7 @@ res = col.query(query_embeddings=[emb], n_results=TOP_K,
 }
 ```
 
-### Paso 7 — Generación con Gemini 2.5 Flash
+### Paso 7 - Generación con Gemini 2.5 Flash
 ```python
 resp = client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
 ```
@@ -245,7 +245,7 @@ Tres capas de protección:
 
 ## Informe de evaluación
 
-### Evaluación manual — 10 preguntas en el GUI
+### Evaluación manual - 10 preguntas en el GUI
 
 Cada respuesta fue verificada directamente contra el texto oficial del reglamento correspondiente como ground truth.
 
@@ -260,13 +260,13 @@ Cada respuesta fue verificada directamente contra el texto oficial del reglament
 | P7 | ¿Cuántas veces repetir en posgrado? | Posgrado | Art. 59 Par.2 | ✅ Correcta |
 | P8 | ¿Profe TC puede trabajar en otra universidad? | Docente | Art. 17 | ✅ Correcta |
 | P9 | Horas semanales docente tiempo completo | Docente | Art. 4 | ✅ Correcta |
-| P10 | ¿Cuál es el horario de la cafetería? | Ninguno | — | ✅ Correcta |
+| P10 | ¿Cuál es el horario de la cafetería? | Ninguno | - | ✅ Correcta |
 
 **Resultado: 9/10 correctas · 0 alucinaciones**
 
 ---
 
-### Evaluación con criterios RAGAS — métricas por pregunta
+### Evaluación con criterios RAGAS - métricas por pregunta
 
 Se aplicaron los criterios del framework RAGAS a las respuestas reales del GUI, verificadas contra los reglamentos oficiales. Se evalúan por separado la relevancia de la respuesta, la fidelidad al contexto recuperado y la precisión de los chunks recuperados.
 
@@ -301,17 +301,17 @@ Se aplicaron los criterios del framework RAGAS a las respuestas reales del GUI, 
 
 ---
 
-### Caso de éxito — P6
+### Caso de éxito - P6
 
 **Pregunta:** "Perdí 4 materias este semestre, ¿pierdo el cupo y puedo volver?"
 
 El sistema recibió lenguaje coloquial ("perdí") y recuperó correctamente Art. 76 y Art. 80 cruzando dos chunks de distintas secciones del reglamento. La búsqueda semántica asoció "perder materias" con "reprobar asignaturas" y construyó una respuesta completa que incluyó el proceso de reintegro y la advertencia sobre la segunda pérdida de cupo.
 
-**Por qué funcionó:** éxito del retrieval semántico — consulta en lenguaje informal mapeada correctamente al vocabulario formal del reglamento.
+**Por qué funcionó:** éxito del retrieval semántico - consulta en lenguaje informal mapeada correctamente al vocabulario formal del reglamento.
 
 ---
 
-### Caso de error — P3
+### Caso de error - P3
 
 **Pregunta:** "¿Qué pasa si me copian en un parcial con el celular?"
 
@@ -340,13 +340,13 @@ El chunk correcto fue recuperado (Art. 73, fraude académico), pero la respuesta
 ## Tecnologías
 
 - **Python 3.10+**
-- **Google Gemini 2.5 Flash** — modelo generativo
-- **Google Gemini Embedding 001** — embeddings semánticos (3072 dims)
-- **ChromaDB** — base de datos vectorial persistente, similitud coseno
-- **LangChain Text Splitters** — chunking por separadores
-- **PyPDF** — extracción de texto de PDFs
-- **Gradio 6.x** — interfaz web conversacional
-- **colorama** — interfaz de consola con colores
+- **Google Gemini 2.5 Flash** - modelo generativo
+- **Google Gemini Embedding 001** - embeddings semánticos (3072 dims)
+- **ChromaDB** - base de datos vectorial persistente, similitud coseno
+- **LangChain Text Splitters** - chunking por separadores
+- **PyPDF** - extracción de texto de PDFs
+- **Gradio 6.x** - interfaz web conversacional
+- **colorama** - interfaz de consola con colores
 
 ## Dependencias
 
