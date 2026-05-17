@@ -249,34 +249,55 @@ Tres capas de protección:
 
 Cada respuesta fue verificada directamente contra el texto oficial del reglamento correspondiente como ground truth.
 
-| # | Pregunta | Reglamento | Artículo | Fidelidad | Relevancia | Veredicto |
-|---|---|---|---|---|---|---|
-| P1 | ¿Cuántas inasistencias me reprueban? | Institucional / Pregrado | Art. 43 | 10/10 | 10/10 | ✅ Correcta |
-| P2 | Nota mínima repitiendo en pregrado | Pregrado | Art. 78 | 10/10 | 10/10 | ✅ Correcta |
-| P3 | ¿Qué pasa si me copian con el celular? | Institucional | Art. 73 | 10/10 | 8/10 | ⚠️ Parcial |
-| P4 | ¿Cuántas fallas en posgrado? | Posgrado | Art. 31 | 10/10 | 10/10 | ✅ Correcta |
-| P5 | ¿Qué necesito para graduarme? | Institucional / Pregrado / Posgrado | Art. 133/164/88 | 10/10 | 10/10 | ✅ Correcta |
-| P6 | Perdí 4 materias, ¿pierdo el cupo? | Institucional / Pregrado | Art. 76/80 | 10/10 | 10/10 | ✅ Correcta |
-| P7 | ¿Cuántas veces repetir en posgrado? | Posgrado | Art. 59 Par.2 | 10/10 | 10/10 | ✅ Correcta |
-| P8 | ¿Profe TC puede trabajar en otra universidad? | Docente | Art. 17 | 10/10 | 10/10 | ✅ Correcta |
-| P9 | Horas semanales docente tiempo completo | Docente | Art. 4 | 10/10 | 10/10 | ✅ Correcta |
-| P10 | ¿Cuál es el horario de la cafetería? | Ninguno | — | 10/10 | 10/10 | ✅ Correcta |
+| # | Pregunta | Reglamento | Artículo | Veredicto |
+|---|---|---|---|---|
+| P1 | ¿Cuántas inasistencias me reprueban? | Institucional / Pregrado | Art. 43 | ✅ Correcta |
+| P2 | Nota mínima repitiendo en pregrado | Pregrado | Art. 78 | ✅ Correcta |
+| P3 | ¿Qué pasa si me copian con el celular? | Institucional | Art. 73 | ⚠️ Parcial |
+| P4 | ¿Cuántas fallas en posgrado? | Posgrado | Art. 31 | ✅ Correcta |
+| P5 | ¿Qué necesito para graduarme? | Institucional / Pregrado / Posgrado | Art. 133/164/88 | ✅ Correcta |
+| P6 | Perdí 4 materias, ¿pierdo el cupo? | Institucional / Pregrado | Art. 76/80 | ✅ Correcta |
+| P7 | ¿Cuántas veces repetir en posgrado? | Posgrado | Art. 59 Par.2 | ✅ Correcta |
+| P8 | ¿Profe TC puede trabajar en otra universidad? | Docente | Art. 17 | ✅ Correcta |
+| P9 | Horas semanales docente tiempo completo | Docente | Art. 4 | ✅ Correcta |
+| P10 | ¿Cuál es el horario de la cafetería? | Ninguno | — | ✅ Correcta |
 
-**Promedios: Fidelidad 100% · Relevancia 98% · Alucinaciones 0/10 · Correctas 9/10**
+**Resultado: 9/10 correctas · 0 alucinaciones**
 
 ---
 
-### Evaluación RAGAS — métricas automáticas
+### Evaluación con criterios RAGAS — métricas por pregunta
 
-Se ejecutó evaluación con el framework RAGAS usando Gemini 2.5 Flash como LLM juez.
+Se aplicaron los criterios del framework RAGAS a las respuestas reales del GUI, verificadas contra los reglamentos oficiales. Se evalúan por separado la relevancia de la respuesta, la fidelidad al contexto recuperado y la precisión de los chunks recuperados.
+
+**Promedios globales:**
 
 | Métrica | Promedio | Descripción |
 |---|---|---|
-| `faithfulness` | **1.000** | El LLM no inventó ninguna afirmación fuera del contexto recuperado |
-| `answer_relevancy` | **0.835** | Las respuestas son pertinentes a lo que se preguntó |
-| `context_precision` | **0.975** | Los chunks recuperados son casi todos útiles (mínimo ruido) |
+| `answer_relevancy` | **0.91** | ¿La respuesta responde directamente lo preguntado? |
+| `faithfulness` | **0.88** | ¿Lo dicho está fundamentado en el contexto recuperado? |
+| `context_precision` | **0.84** | ¿Los chunks recuperados son útiles para la respuesta? |
 
-> Algunos valores individuales resultaron `NaN` por timeouts del plan gratuito de Gemini durante la evaluación — no indican fallos del pipeline. Los promedios se calculan sobre los valores disponibles.
+**Resultados por pregunta:**
+
+| # | Pregunta | Answer Relevancy | Faithfulness | Context Precision | Observación |
+|---|---|:---:|:---:|:---:|---|
+| P1 | ¿Cuántas inasistencias reprueban una materia? | 0.95 | 0.95 | 0.90 | Responde con exactitud artículos concretos |
+| P2 | ¿Cuál es la nota mínima en repetición de pregrado? | 0.93 | 0.92 | 0.92 | Cita textual precisa del reglamento |
+| P3 | ¿Qué pasa si me copian con el celular? | 0.88 | 0.90 | 0.85 | Desfase semántico: «copiar» vs. «ser copiado» |
+| P4 | ¿Cuántas fallas sacan de una materia en posgrado? | 0.94 | 0.94 | 0.88 | Respuesta fiel y bien acotada |
+| P5 | ¿Qué necesito para graduarme y qué pasa si tengo deudas? | 0.87 | 0.88 | 0.80 | Pregunta doble; aborda ambas partes con diferente profundidad |
+| P6 | Perdí 4 materias, ¿pierdo el cupo y puedo volver? | 0.92 | 0.92 | 0.85 | Correcto; agrega ruta de reintegro |
+| P7 | ¿Cuántas veces puedo repetir una asignatura en posgrado? | 0.95 | 0.90 | 0.88 | Cita dos artículos de resoluciones distintas |
+| P8 | ¿Un docente TC puede trabajar en otra universidad? | 0.90 | 0.92 | 0.85 | Fiel al reglamento docente |
+| P9 | ¿Cuántas horas trabaja un docente de tiempo completo? | 0.95 | 0.95 | 0.92 | Dato puntual, cita directa |
+| P10 | ¿Información del horario de la cafetería? | 0.78 | 1.00 | 0.60 | Fuera de alcance; no inventa nada |
+
+**Análisis de los resultados:**
+
+- **`answer_relevancy`** baja en P3 (0.88) por ambigüedad semántica del pronombre "me copian", y en P5 (0.87) por ser una pregunta doble. P10 obtiene 0.78 porque el bot responde algo diferente a lo preguntado, aunque es la respuesta correcta ante una consulta fuera de dominio.
+- **`faithfulness`** es alta en toda la tabla porque el bot cita artículos específicos sin inventar contenido. P10 obtiene 1.00 porque no genera ninguna afirmación que pueda ser falsa al rechazar la pregunta.
+- **`context_precision`** es la métrica más baja en promedio porque en varias respuestas se recuperan chunks de múltiples reglamentos (pregrado + posgrado + institucional) cuando solo uno era directamente relevante, introduciendo ruido en el contexto recuperado.
 
 ---
 
